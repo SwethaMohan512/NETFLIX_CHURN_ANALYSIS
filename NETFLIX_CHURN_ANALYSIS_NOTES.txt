@@ -1,0 +1,258 @@
+                                                                   /*updating column*/
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT * FROM netflix_churn_analysis.netflix;
+
+-- changing column name --
+ALTER TABLE NETFLIX CHANGE COLUMN USER  USER_ID int;
+
+/*-adding new column monthly revenue */
+alter table netflix add column monthly_rev int;
+
+
+/*updating the new column with datas*/
+
+update netflix join sub_amt on netflix.country=sub_amt.country 
+set netflix.monthly_rev =
+ case 
+when netflix.sub_type = "basic" then sub_amt.basic
+when netflix.sub_type = "standard" then sub_amt.standard
+when netflix.sub_type = "Premium" then sub_amt.premium
+when netflix.sub_type = "mobile" then sub_amt.mobile
+else 0
+end;
+SELECT MONTHLY_REV FROM NETFLIX;
+select country,device,sub_type, monthly_rev from netflix where device = "smartphone";
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+                                                                        /* CHURN ANALYSIS */
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*1. ANALYSING TOTAL CHURN  RATE*/
+
+select count(*) as total_user,
+count(case when end_date is not null then 1  end) as churn_total,
+round((count(case when end_date is not null then 1  end)* 100/count(*) ),0) as churn_rate
+from netflix;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*2.CHURN  RATE BY SUBCRIPTION TYPE*/
+
+SELECT SUB_TYPE, count(*) as total_user,
+count(case when end_date is not null then 1  end) as churned_users,
+round((count(case when end_date is not null then 1  end)* 100/count(*)),0) as churn_rate
+from netflix
+GROUP BY SUB_TYPE order by churn_rate desc;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*3. is there any correlation between churn rate and age */
+
+ select 
+case 
+when age < 18  then "UNDER 18" 
+when age >=18 and age <= 30 then "18 to 30"
+when age > 30 and age <=50 then "31 to 50"
+else "50+"
+end as age_category,
+count(*) as total_users,
+count(case when end_date is not null then 1 end) as churned_users,
+round((count(case when end_date is not null then 1 end)* 100/count(*)), 0) as churn_rate 
+from netflix group by age_category order by churn_rate desc;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+/*4. is there any correlation between churn rate and gender */
+
+select gender, count(*) as total_users,
+count(case when end_date is not null then 1 end) as churned_users,
+round((count(case when end_date is not null then 1 end)*100/count(*)),0) as churn_rate
+from netflix group by gender order by churn_rate desc;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*5. churn rate by device*/
+
+select device, count(*) as total_users,
+count(case when end_date is not null then 1 end) as churned_users,
+round((count(case when end_date is not null then 1 end)*100/count(*)),0) as churn_rate
+from netflix group by device order by device desc;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*6. churn rate by country*/
+
+select country, count(*) as total_users,
+count(case when end_date is not null then 1 end) as churned_users,
+round((count(case when end_date is not null then 1 end)*100/count(*)),0) as churn_rate
+from netflix group by country order by churn_rate desc;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*7. TOP REASON FOR CHURN*/
+
+SELECT REASON, COUNT(*) AS TOTA_USER
+FROM NETFLIX WHERE END_DATE IS NOT NULL GROUP BY REASON
+ORDER BY COUNT(*) DESC LIMIT 5; 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+                                                           /*RETENTION ANALYSIS*/
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                                                           
+  /*1.total retention rate*/
+  
+select count(*) as total_user,
+count(case when end_date is  null then 1  end) as retention_total,
+round((count(case when end_date is  null then 1  end)* 100/count(*) ),0) as retention_rate
+from netflix;
+
+/*retention rate by subscription type*/
+
+SELECT SUB_TYPE, count(*) as total_user,
+count(case when end_date is  null then 1  end) as retention_total,
+round((count(case when end_date is  null then 1  end)/count(*) * 100),0) as retention_rate
+from netflix
+GROUP BY SUB_TYPE order by retention_rate desc;
+
+/*3. is there any correlation between rentention rate and age */
+
+ select 
+case 
+when age < 18  then "UNDER 18" 
+when age >=18 and age <= 30 then "18 to 30"
+when age > 30 and age <=50 then "31 to 50"
+else "50+"
+end as age_category,
+count(*) as total_users,
+count(case when end_date is  null then 1 end) as retiened_users,
+round((count(case when end_date is null then 1 end)* 100/count(*)), 0) as retiened_rate 
+from netflix group by age_category order by retiened_rate desc;
+
+/*4. is there any correlation between retention rate and gender */
+
+select gender, count(*) as total_users,
+count(case when end_date is null then 1 end) as retiened_users,
+round((count(case when end_date is  null then 1 end)*100/count(*)),0) as retiened_rate
+from netflix group by gender order by retiened_rate desc;
+
+/*5. retention rate by device*/
+
+select device, count(*) as total_users,
+count(case when end_date is null then 1 end) as retiened_users,
+round((count(case when end_date is  null then 1 end)*100/count(*)),0) as retiened_rate
+from netflix group by device order by retiened_rate desc;
+
+
+
+/*6. retention rate by country*/
+
+select country, count(*) as total_users,
+count(case when end_date is   null then 1 end) as retiened_users,
+round((count(case when end_date is   null then 1 end)*100/count(*)),0) as retiened_rate
+from netflix group by country order by retiened_rate desc;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+                                                            /*TENURE ANALYSIS*/
+ 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ALTER TABLE NETFLIX CHANGE COLUMN `PLAN_DURATION(IN MONTHS)`PLAN_DURATION INT;
+
+
+/*AVERAGE TENURE ANALYSIS*/
+
+select avg(PLAN_DURATION) as avg_tenure from netflix;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+/*TENSURE DISTRIBUTION ANALYSIS*/
+
+SELECT PLAN_DURATION, count(CASE WHEN END_DATE IS NOT NULL THEN 1 END) AS TOTAL_USER
+ FROM netflix 
+ GROUP BY PLAN_DURATION 
+ ORDER BY TOTAL_USER DESC ;
+ 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*TOTAL USER BY SEGMENTATION (AGE)*/
+
+SELECT
+ CASE WHEN AGE < 18 THEN "UNDER 18"
+WHEN AGE >=18 AND AGE <=30 THEN "18 TO 30"
+WHEN AGE > 30 AND AGE <= 50 THEN "31 TO 50"
+ELSE "50+" 
+END AS AGE_CATEGORY,AVG(PLAN_DURATION) FROM netflix GROUP BY AGE_CATEGORY ORDER BY AVG(PLAN_DURATION) DESC;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*REASON FOR CHURN BASED ON TENURE*/
+
+SELECT 
+CASE	WHEN PLAN_DURATION < 6 THEN "LOW STAYED PEOPLE REASON"
+WHEN PLAN_DURATION>= 6 AND  PLAN_DURATION <=10 THEN "MEDIUM SATYED PEOPLE REASON"
+ELSE "HIGH STAYED PEOPLE REASON" 
+END AS TENURE_GROUP, REASON, COUNT(*) AS TOTAL_USERS
+FROM netflix WHERE USER_ACTIVITY = "CANCELLED" GROUP BY TENURE_GROUP, REASON
+ORDER BY TENURE_GROUP, TOTAL_USERS DESC;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*trends over a year and month for tensure*/
+
+select year(sTART_date) as year ,month(sTART_date) as month, avg(PLAN_DURATION) as avg_tenure
+  from netflix group by  year(sTART_date)  ,month(sTART_date) order by year(sTART_date)  ,month(sTART_date); 
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*calculating how many new subcriber netflix get every month in a year*/
+
+
+select year(s_date) as year ,month(s_date) as month, count(*) as new_sub, round(avg(PLAN_DURATION),0) as avg_tensure
+  from netflix group by  year(s_date)  ,month(s_date) order by month , new_sub desc; 
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                  
+								/*REVENUE ANALYSIS*/
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+/*TOTAL REVENUE*/
+                                    
+SELECT  SUM(MONTHLY_REV) AS TOTAL_REVENUE FROM netflix;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ /*REVENUE BY COUNTRY*/
+ 
+SELECT COUNTRY, SUM(MONTHLY_REV) AS TOTAL_REVENUE FROM netflix GROUP BY COUNTRY ORDER BY COUNTRY DESC;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/*yeary revenue */
+
+select year(start_date) as year,month(start_date) as month, sum(monthly_rev) as monthly_rev from netflix group by year(start_date),month(start_date)  order by year, month;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
